@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Cadastro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        form {
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="date"],
+        .form-group input[type="file"] {
+            box-sizing: border-box; /* Garante que o padding e a borda sejam incluídos na largura total */
+            width: 100%;
+            height: 40px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input[type="file"] {
+            padding: 10px 0;
+        }
+
+        #erro {
+            color: #f00;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        #enviar {
+            width: 100%;
+            height: 40px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #enviar:hover {
+            background-color: #3e8e41;
+        }
+
+        /* Estilo do modal */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Estilo para campos específicos */
+input[type="text"].campo-pequeno {
+    width: 50%; /* Ajuste a largura conforme necessário */
+}
+    </style>
+</head>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css" rel="stylesheet" />
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mapbox/mapbox-gl-geocoder@4.7.0/dist/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mapbox/mapbox-gl-geocoder@4.7.0/dist/mapbox-gl-geocoder.css" />
+<body>
+    <form id="form-cadastro">
+        <div class="form-group">
+            <label for="nome">Nome Completo:</label>
+            <input type="text" id="nome" name="nome" required>
+            <div id="nome-erro"></div>
+        </div>
+        <div class="form-group">
+            <label for="data-nascimento">Data de Nascimento:</label>
+            <input type="date" id="data-nascimento" name="data-nascimento" required>
+            <div id="data-nascimento-erro"></div>
+        </div>
+        <div class="form-group">
+            <label for="telefone">Número de Telefone:</label>
+            <input type="text" id="telefone" name="telefone"class="campo-pequeno" required>
+            <div id="telefone-erro"></div>
+        </div>
+        <div class="form-group">
+            <label for="cpf">CPF:</label>
+            <input type="text" id="cpf" name="cpf"class="campo-pequeno" required>
+            <div id="cpf-erro"></div>
+        </div>
+        <div class="form-group">
+            <label for="rg">RG:</label>
+            <input type="text" id="rg" name="rg"class="campo-pequeno" required>
+            <div id="rg-erro"></div>
+        </div>
+        <div class="form-group">
+            <label for="endereco">Endereço:</label>
+            <div id="geocoder" style="width: 100%;"></div> <!-- Novo div para o Geocoder -->
+            <div id="endereco-erro"></div>
+        </div>
+        <div class="form-group">
+            <label for="email">E-mail:</label>
+            <input type="email" id="email" name="email" required>
+            <div id="email-erro"></div>
+        </div>
+        <div class="form-group">
+            <label for="confirmar-email">Confirmar E-mail:</label>
+            <input type="email" id="confirmar-email" name="confirmar-email" required>
+            <div id="confirmar-email-erro"></div>
+        </div>
+        <div class="form-group">
+            <label for="foto-rosto">Foto do Rosto:</label>
+            <input type="file" id="foto-rosto" name="foto-rosto" accept="image/*" required>
+        </div>
+        <div class="form-group">
+            <label for="foto-rg">Foto do RG:</label>
+            <input type="file" id="foto-rg" name="foto-rg" accept="image/*" required>
+        </div>
+        <button type="button" id="enviar">Enviar</button>
+    </form>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Termos e Condições</h2>
+            <p>Por favor, leia os termos e condições antes de continuar.</p>
+            <button id="aceitar">Aceitar</button>
+        </div>
+    </div>  
+    <script>
+        document.getElementById('enviar').addEventListener('click', function() {
+            // Obter valores dos campos
+            const cpf = document.getElementById('cpf').value;
+            const rg = document.getElementById('rg').value;
+            const email = document.getElementById('email').value;
+            const confirmarEmail = document.getElementById('confirmar-email').value;
+
+            // Validações
+            const cpfValido = validarCPF(cpf);
+            const rgValido = validarRG(rg);
+            const emailValido = validarEmail(email);
+            const emailsIguais = email === confirmarEmail;
+
+            // Log para debugging
+            console.log("Validações:", cpfValido, rgValido, emailValido, emailsIguais);
+
+            // Exibir modal se todas as validações forem verdadeiras
+            if (cpfValido && rgValido &&  emailValido && emailsIguais) {
+                document.getElementById('modal').style.display = "block";
+            } else {
+                alert("Por favor, corrija os erros antes de continuar.");
+            }
+        });
+
+        // Funções de validação
+        function validarCPF(cpf) {
+            return cpf.length === 14 && /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf);
+        }
+
+        function validarRG(rg) {
+            // Lógica de validação do RG
+            return rg.length >= 5 && /^\d+$/.test(rg);
+        }
+
+        function validarEmail(email) {
+            // Lógica de validação do e-mail
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+         // Função para permitir apenas números
+    function apenasNumeros(event) {
+        const input = event.target;
+        input.value = input.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+        }
+        // Função para formatar telefone
+    function formatarTelefone(telefone) {
+        return telefone.replace(/(\d{2})(\d)/, '($1) $2')
+                       .replace(/(\d{5})(\d)/, '$1-$2');
+        }
+
+         // Função para formatar CPF
+    function formatarCPF(cpf) {
+        return cpf.replace(/(\d{3})(\d)/, '$1.$2')
+                  .replace(/(\d{3})(\d)/, '$1.$2')
+                  .replace(/(\d{3})(\d{2})$/, '$1-$2');
+        }
+        // Adicionando eventos de input para os campos
+    document.getElementById('cpf').addEventListener('input', function(event) {
+        apenasNumeros(event);
+        this.value = formatarCPF(this.value);
+    });
+
+    document.getElementById('telefone').addEventListener('input', function(event) {
+        apenasNumeros(event);
+        this.value = formatarTelefone(this.value);
+    });
+
+    document.getElementById('rg').addEventListener('input', apenasNumeros);
+
+// Sua chave Mapbox
+mapboxgl.accessToken = 'pk.eyJ1IjoiaWNhcm9tcyIsImEiOiJjbTR3dHFqNWEwaGxrMnJwb242N244ZGd2In0.8rXqQG4A1trDgs9WrC4N5w';
+
+// Criando o Geocoder
+const geocoder = new MapboxGeocoder({
+    accessToken: mapboxgl.accessToken, // Usando a chave do Mapbox
+    types: 'address', // Limita os resultados a endereços
+    placeholder: '       Digite o endereço...',
+    mapboxgl: mapboxgl // Passa a referência do Mapbox GL JS
+});
+
+// Aguardar o carregamento do DOM
+document.addEventListener('DOMContentLoaded', function() {
+    const enderecoDiv = document.getElementById('geocoder');
+
+    // Adiciona o Geocoder ao div
+    enderecoDiv.appendChild(geocoder.onAdd());
+
+
+});
+        // Fechar o modal
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('modal').style.display = "none";
+        }
+
+        document.getElementById('aceitar').onclick = function() {
+            alert("Cadastro realizado com sucesso!");
+            document.getElementById('modal').style.display = "none";
+            document.getElementById('form-cadastro').reset(); // Limpa o formulário
+        }
+    </script>
+</body>
+</html>
