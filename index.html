@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulário de Cadastro</title>
     <style>
+        /* Estilos para o vídeo e canvas */
+        #video {
+            display: none; /* Oculta o vídeo */
+        }
+        #canvas {
+            border: 1px solid black;
+            position: relative;
+        }
+        .oval {
+            border: 2px dashed #4CAF50;
+            border-radius: 50%;
+            position: absolute;
+            width: 200px; /* Ajuste conforme necessário */
+            height: 250px; /* Ajuste conforme necessário */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
         body {
             font-family: Arial, sans-serif;
         }
@@ -167,7 +186,12 @@ input[type="text"].campo-pequeno {
         <div class="form-group">
             <label for="foto-rosto">Foto do Rosto:</label>
             <input type="file" id="foto-rosto" name="foto-rosto" accept="image/*" required>
-        </div>
+            <button type="button" id="abrir-camera">Abrir Câmera</button>
+            <div id="video-container">
+                <video id="video" width="640" height="480" autoplay></video>
+                <canvas id="canvas" width="640" height="480"></canvas>
+                <div class="oval"></div>
+            </div>
         <div class="form-group">
             <label for="foto-rg">Foto do RG:</label>
             <input type="file" id="foto-rg" name="foto-rg" accept="image/*" required>
@@ -178,7 +202,81 @@ input[type="text"].campo-pequeno {
     <input type="hidden" id="longitude" name="longitude">
         <button type="button" id="enviar">Enviar</button>
     </form>
+    <script src="https://docs.opencv.org/4.x/opencv.js" async></script>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const abrirCameraBtn = document.getElementById('abrir-camera');
 
+        abrirCameraBtn.addEventListener('click', async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            video.style.display = 'block';
+            detectFace();
+        });
+
+        function detectFace() {
+            const classifier = new cv.CascadeClassifier();
+            classifier.load('haarcascade_frontalface_default.xml'); // Carregar o classificador
+
+            setInterval(() => {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                let src = cv.imread(canvas);
+                let gray = new cv.Mat();
+                cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                let faces = new cv.RectVector();
+                classifier.detectMultiScale(gray, faces, 1.1, 3, 0);
+
+                // Desenhar retângulos ao redor dos rostos detectados
+                for (let i = 0; i < faces.size(); i++) {
+                    let face = faces.get(i);
+                    context.beginPath();
+                    context.arc(face.x + face.width / 2, face.y + face.height / 2, Math.max(face.width, face.height) / 2, 0, 2 * Math.PI);
+                    context.strokeStyle = 'green';
+                    context.lineWidth = 2;
+                    context.stroke();
+                }
+
+                src.delete();
+                gray.delete();
+                faces.delete();
+            }, 100);
+        }
+       // Captura a imagem quando o rosto é detectado
+       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const dataURL = canvas.toDataURL('image/png');
+
+            // Verifica se o rosto foi detectado antes de enviar
+            if (imageData.data.some(value => value !== 0)) { // Verifica se há pixels não transparentes
+                // Cria um Blob a partir da imagem capturada
+                fetch(dataURL)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const file = new File([blob], "foto_rosto.png", { type: "image/png" });
+                        const formData = new FormData(document.getElementById('form-cadastro'));
+                        formData.append('foto-rosto', file);
+
+                        // Aqui você pode enviar o FormData para o servidor
+                        // Exemplo usando fetch
+                        fetch('/seu-endpoint', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Sucesso:', data);
+                            alert("Foto enviada com sucesso!");
+                        })
+                        .catch((error) => {
+                            console.error('Erro:', error);
+                        });
+                    });
+            } else {
+                alert("Nenhum rosto detectado. Tente novamente.");
+            }
+        
+    </script> 
     <!-- Modal -->
     <div id="modal" class="modal">
         <div class="modal-content">
