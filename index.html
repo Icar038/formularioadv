@@ -140,6 +140,16 @@ input[type="text"].campo-pequeno {
             <div id="rg-erro"></div>
         </div>
         <div class="form-group">
+            <label for="estado-civil">Estado Civil:</label>
+            <input type="text" id="estado-civil" name="estado-civil"class="campo-pequeno" required list="estados-civis">
+            <datalist id="estados-civis">
+                <option value="Solteiro(a)">
+                <option value="Casado(a)">
+                <option value="Divorciado(a)">
+                <option value="Viúvo(a)">
+            </datalist>
+        </div>
+        <div class="form-group">
             <label for="endereco">Endereço:</label>
             <div id="geocoder" style="width: 100%;"></div> <!-- Novo div para o Geocoder -->
             <div id="endereco-erro"></div>
@@ -162,6 +172,10 @@ input[type="text"].campo-pequeno {
             <label for="foto-rg">Foto do RG:</label>
             <input type="file" id="foto-rg" name="foto-rg" accept="image/*" required>
         </div>
+        
+    <!-- Campos ocultos para geolocalização -->
+    <input type="hidden" id="latitude" name="latitude">
+    <input type="hidden" id="longitude" name="longitude">
         <button type="button" id="enviar">Enviar</button>
     </form>
 
@@ -191,6 +205,17 @@ input[type="text"].campo-pequeno {
             // Log para debugging
             console.log("Validações:", cpfValido, rgValido, emailValido, emailsIguais);
 
+// Obter geolocalização
+if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            console.log("Latitude: " + latitude + ", Longitude: " + longitude);
+
+// Armazenar a latitude e longitude nos campos ocultos
+document.getElementById('latitude').value = latitude;
+        document.getElementById('longitude').value = longitude;
+            
             // Exibir modal se todas as validações forem verdadeiras
             if (cpfValido && rgValido &&  emailValido && emailsIguais) {
                 document.getElementById('modal').style.display = "block";
@@ -198,6 +223,10 @@ input[type="text"].campo-pequeno {
                 alert("Por favor, corrija os erros antes de continuar.");
             }
         });
+    } else {
+        alert("Geolocalização não é suportada por este navegador.");
+    }
+});
 
         // Funções de validação
         function validarCPF(cpf) {
